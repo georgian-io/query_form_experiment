@@ -1,0 +1,55 @@
+[project]
+name = "query-form-experiment"
+version = "0.1.0"
+description = "How does an embedding-retrieval leaderboard reshuffle when human queries are replaced by LLM-generated ones?"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Paul Inder", email = "paul@georgian.io" }]
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "anthropic>=0.117.0",
+    "cohere>=7.0.6",
+    "datasets>=3.2.0",
+    "defusedxml>=0.7.1",
+    "google-genai>=1.0.0",
+    "huggingface-hub>=0.27.0",
+    "numpy>=2.0.0",
+    "openai>=2.46.0",
+    "pandas>=2.2.0",
+    "pyarrow>=18.0.0",
+    "pydantic>=2.10.0",
+    "python-dotenv>=1.2.2",
+    "pytrec-eval-terrier>=0.5.6",
+    "pyyaml>=6.0.2",
+    "scipy>=1.14.0",
+    "sentence-transformers>=5.6.0",
+    "tenacity>=9.0.0",
+    "tiktoken>=0.13.0",
+    "turbopuffer>=0.5.0",
+    "voyageai>=0.5.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "ruff>=0.9.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "integration: hits the network or a paid provider (deselected by default)",
+]
+addopts = "-m 'not integration'"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

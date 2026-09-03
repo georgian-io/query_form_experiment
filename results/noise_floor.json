@@ -1,0 +1,176 @@
+{
+  "structural": {
+    "aila_statutes": 0.000612912402530389,
+    "humaneval": 0.0023358876356236865
+  },
+  "empirical": [
+    {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "dataset": "aila_statutes",
+      "scores": [
+        0.2051557462404401,
+        0.2051557462404401,
+        0.2051557462404401
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": true,
+      "queries_changed": 0,
+      "n_queries": 50,
+      "max_per_query_delta": 0.0
+    },
+    {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "dataset": "humaneval",
+      "scores": [
+        0.6532929844921224,
+        0.6532929844921224,
+        0.6532929844921224
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": true,
+      "queries_changed": 0,
+      "n_queries": 158,
+      "max_per_query_delta": 0.0
+    },
+    {
+      "model": "gemini-embedding-001",
+      "dataset": "aila_statutes",
+      "scores": [
+        0.45695047933936433,
+        0.45695047933936433,
+        0.45695047933936433
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": true,
+      "queries_changed": 0,
+      "n_queries": 50,
+      "max_per_query_delta": 0.0
+    },
+    {
+      "model": "gemini-embedding-001",
+      "dataset": "humaneval",
+      "scores": [
+        0.988999110804702,
+        0.988999110804702,
+        0.988999110804702
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": true,
+      "queries_changed": 0,
+      "n_queries": 158,
+      "max_per_query_delta": 0.0
+    },
+    {
+      "model": "voyage-4-large",
+      "dataset": "aila_statutes",
+      "scores": [
+        0.503948518007531,
+        0.503948518007531,
+        0.503948518007531
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": true,
+      "queries_changed": 0,
+      "n_queries": 50,
+      "max_per_query_delta": 0.0
+    },
+    {
+      "model": "voyage-4-large",
+      "dataset": "humaneval",
+      "scores": [
+        0.9913349984403257,
+        0.9913349984403257,
+        0.9913349984403257
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": true,
+      "queries_changed": 0,
+      "n_queries": 158,
+      "max_per_query_delta": 0.0
+    },
+    {
+      "model": "text-embedding-3-small",
+      "dataset": "aila_statutes",
+      "scores": [
+        0.2749433520091693,
+        0.2749433520091693,
+        0.2749433520091693
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": false,
+      "queries_changed": 0,
+      "n_queries": 50,
+      "max_per_query_delta": 0.0
+    },
+    {
+      "model": "text-embedding-3-small",
+      "dataset": "humaneval",
+      "scores": [
+        0.8170441792878703,
+        0.8170441792878703,
+        0.8170441792878703
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": false,
+      "queries_changed": 0,
+      "n_queries": 158,
+      "max_per_query_delta": 0.0
+    },
+    {
+      "model": "embed-v4.0",
+      "dataset": "aila_statutes",
+      "scores": [
+        0.3389197833229467,
+        0.3378209347540275,
+        0.3386710442302303
+      ],
+      "range": 0.0010988485689191752,
+      "bit_identical_vectors": false,
+      "queries_changed": 2,
+      "n_queries": 50,
+      "max_per_query_delta": 0.01710791804331213
+    },
+    {
+      "model": "embed-v4.0",
+      "dataset": "humaneval",
+      "scores": [
+        0.9775675871108941,
+        0.9775675871108941,
+        0.9775675871108941
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": false,
+      "queries_changed": 0,
+      "n_queries": 158,
+      "max_per_query_delta": 0.0
+    },
+    {
+      "model": "qwen/qwen3-embedding-8b",
+      "dataset": "aila_statutes",
+      "scores": [
+        0.8022988258613959,
+        0.8021672840376954,
+        0.8050408693072166
+      ],
+      "range": 0.002873585269521195,
+      "bit_identical_vectors": false,
+      "queries_changed": 2,
+      "n_queries": 50,
+      "max_per_query_delta": 0.14407766125137167
+    },
+    {
+      "model": "qwen/qwen3-embedding-8b",
+      "dataset": "humaneval",
+      "scores": [
+        0.9898277801311036,
+        0.9898277801311036,
+        0.9898277801311036
+      ],
+      "range": 0.0,
+      "bit_identical_vectors": false,
+      "queries_changed": 0,
+      "n_queries": 158,
+      "max_per_query_delta": 0.0
+    }
+  ]
+}

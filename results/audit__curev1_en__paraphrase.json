@@ -1,0 +1,64 @@
+{
+  "dataset": "curev1_en",
+  "condition": "paraphrase",
+  "rubric_version": "v1",
+  "rubric_sha": "cf3bc96f40e0b452",
+  "threshold": 0.15,
+  "n_sampled": 120,
+  "per_generator": {
+    "gemini-2.5-pro": {
+      "judge": "claude-opus-4-8",
+      "n": 120,
+      "drifted": 2,
+      "preserved": 117,
+      "uncertain": 1,
+      "judge_errors": 0,
+      "drift_rate": 0.01680672268907563,
+      "below_threshold": true,
+      "threshold": 0.15
+    },
+    "claude-opus-4-8": {
+      "judge": "gemini-2.5-pro",
+      "n": 120,
+      "drifted": 1,
+      "preserved": 118,
+      "uncertain": 1,
+      "judge_errors": 0,
+      "drift_rate": 0.008403361344537815,
+      "below_threshold": true,
+      "threshold": 0.15
+    },
+    "gpt-5.1-2025-11-13": {
+      "judge": "gemini-2.5-pro",
+      "n": 120,
+      "drifted": 6,
+      "preserved": 114,
+      "uncertain": 0,
+      "judge_errors": 0,
+      "drift_rate": 0.05,
+      "below_threshold": true,
+      "threshold": 0.15
+    },
+    "meta-llama/llama-3.3-70b-instruct": {
+      "judge": "gemini-2.5-pro",
+      "n": 120,
+      "drifted": 6,
+      "preserved": 114,
+      "uncertain": 0,
+      "judge_errors": 0,
+      "drift_rate": 0.05,
+      "below_threshold": true,
+      "threshold": 0.15
+    }
+  },
+  "pooled": {
+    "n": 480,
+    "drifted": 15,
+    "preserved": 463,
+    "uncertain": 2,
+    "judge_errors": 0,
+    "drift_rate": 0.03138075313807531,
+    "below_threshold": true,
+    "threshold": 0.15
+  }
+}
