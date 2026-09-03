@@ -1,0 +1,64 @@
+{
+  "dataset": "aila_statutes",
+  "condition": "verbose",
+  "rubric_version": "v1",
+  "rubric_sha": "cf3bc96f40e0b452",
+  "threshold": 0.15,
+  "n_sampled": 50,
+  "per_generator": {
+    "gemini-2.5-pro": {
+      "judge": "claude-opus-4-8",
+      "n": 50,
+      "drifted": 29,
+      "preserved": 21,
+      "uncertain": 0,
+      "judge_errors": 0,
+      "drift_rate": 0.58,
+      "below_threshold": false,
+      "threshold": 0.15
+    },
+    "claude-opus-4-8": {
+      "judge": "gemini-2.5-pro",
+      "n": 50,
+      "drifted": 47,
+      "preserved": 3,
+      "uncertain": 0,
+      "judge_errors": 0,
+      "drift_rate": 0.94,
+      "below_threshold": false,
+      "threshold": 0.15
+    },
+    "gpt-5.1-2025-11-13": {
+      "judge": "gemini-2.5-pro",
+      "n": 50,
+      "drifted": 45,
+      "preserved": 5,
+      "uncertain": 0,
+      "judge_errors": 0,
+      "drift_rate": 0.9,
+      "below_threshold": false,
+      "threshold": 0.15
+    },
+    "meta-llama/llama-3.3-70b-instruct": {
+      "judge": "gemini-2.5-pro",
+      "n": 50,
+      "drifted": 33,
+      "preserved": 17,
+      "uncertain": 0,
+      "judge_errors": 0,
+      "drift_rate": 0.66,
+      "below_threshold": false,
+      "threshold": 0.15
+    }
+  },
+  "pooled": {
+    "n": 200,
+    "drifted": 154,
+    "preserved": 46,
+    "uncertain": 0,
+    "judge_errors": 0,
+    "drift_rate": 0.77,
+    "below_threshold": false,
+    "threshold": 0.15
+  }
+}

@@ -1,0 +1,337 @@
+# Experiment slate: RTEB top-10 (the competition) + contrast anchors + BM25 (§7).
+#
+# The anchors and BM25 are not decoration -- the real top-10 has converged onto one
+# LLM-backbone family, so without older/smaller bi-encoders and a lexical floor we can only
+# measure reshuffle *within* that family, never the collective shift away from it (§5.5).
+#
+# `card_verified: true` asserts that prompting + pooling were transcribed from the model card
+# and checked. embed.py refuses to encode without it. Phase 0 verifies exactly one model.
+# Standings move weekly -- re-pull the live top-10 and record the snapshot date before freezing.
+
+embedding_models:
+  # ---- RTEB top-10 (competition slate) -------------------------------------
+  - id: gemini-embedding-001
+    provider: vertex
+    family: llm-backbone-api
+    dim: 3072
+    max_seq_len: 2048
+    # Vertex expresses the query/document asymmetry as a task type rather than a text prefix.
+    query_task_type: RETRIEVAL_QUERY
+    doc_task_type: RETRIEVAL_DOCUMENT
+    similarity: cosine
+    # Native 3072-dim output is already L2-normalized; truncated dims would not be.
+    normalize: false
+    card_verified: true
+
+  - id: voyage-4-large
+    provider: api
+    family: api
+    dim: 2048
+    max_seq_len: 32000
+    # Voyage's input_type makes Voyage prepend its own prompt -- "Represent the query for
+    # retrieving supporting documents: " / "Represent the document for retrieval: ". RTEB gets
+    # the same bytes the other way round: it passes input_type=None and concatenates those exact
+    # strings itself. The two are equivalent; doing BOTH double-prefixes. We use input_type, so
+    # query_instruction/doc_instruction stay unset here on purpose.
+    query_task_type: query
+    doc_task_type: document
+    similarity: cosine
+    # 2048 is the leaderboard row; Voyage would otherwise default this model to 1024.
+    embd_dtype: float32
+    normalize: true
+    card_verified: true
+
+  - id: qwen/qwen3-embedding-8b
+    provider: novita
+    family: llm-backbone
+    dim: 4096
+    max_seq_len: 8192          # Novita's embeddings API caps input here, below the model's 32k.
+    # NO query instruction, deliberately, to match RTEB -- whose metadata records
+    # query_instruct=None and means it literally. Measured both ways against the published
+    # numbers: bare is closer on both datasets, and the card's own prefix
+    #   "Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:"
+    # (no space after "Query:") *raises* AILAStatutes to 0.84022 against a published 0.79863.
+    # So the leaderboard understates this model; reproducing it means running it bare.
+    similarity: cosine
+    normalize: true
+    card_verified: true
+
+  # ---- Contrast anchors: NOT top-10, run locally (§7, §5.5) -----------------
+  # Local rather than hosted on purpose: these are small enough to be free, and it is the only
+  # route on the slate with a pinnable revision, so the anchors are the most reproducible
+  # models we have rather than the least.
+  - id: BAAI/bge-base-en-v1.5
+    provider: local
+    family: bi-encoder
+    dim: 768
+    revision: a5beb1e3e68b9ab74eb54cfd186867f64f240e1a
+    pooling: cls
+    max_seq_len: 512
+    # NO query instruction, to match RTEB. The card specifies
+    #   "Represent this sentence for searching relevant passages: "
+    # for queries only, and it does help (+0.022 AILAStatutes, +0.027 HumanEval) -- but bare
+    # reproduces the published numbers to within 0.0001 on both datasets, so bare is what RTEB
+    # ran. The card's own note that omitting it is only "a slight degradation" is consistent.
+    similarity: cosine
+    normalize: true
+    card_verified: true
+
+  - id: sentence-transformers/all-mpnet-base-v2
+    provider: local
+    family: bi-encoder
+    dim: 768
+    revision: e8c3b32edf5434bc2275fc9bab85f82640a19130
+    pooling: mean
+    max_seq_len: 384
+    # No instruction of any kind on this model.
+    similarity: cosine
+    normalize: true
+    card_verified: true
+
+  - id: sentence-transformers/all-MiniLM-L6-v2
+    provider: local
+    family: bi-encoder-small
+    dim: 384
+    revision: 1110a243fdf4706b3f48f1d95db1a4f5529b4d41
+    pooling: mean
+    max_seq_len: 256
+    similarity: cosine
+    normalize: true
+    card_verified: true
+
+  # ---- Stubbed: complete to 10 from the live leaderboard (§11.1) ------------
+  # NV-Embed-v2 / Nemotron embedders have no serverless host; Novita's
+  # nvidia/nemotron-3-nano-30b-a3b is a CHAT model, usable as a Phase 2 generator lineage,
+  # not as an embedder.
+  - id: nemotron-3-embed-8b
+    provider: novita
+    family: llm-backbone
+    dim: 4096
+    max_seq_len: 4096
+  - id: text-embedding-3-large
+    provider: api
+    family: api
+    dim: 3072
+    max_seq_len: 8191
+    # The only model on the slate with no query/document asymmetry whatsoever -- no task type,
+    # no input type, no prefix. RTEB passes it nothing either. `dimensions` is sent explicitly
+    # because 3072d and 512d are separate leaderboard rows.
+    similarity: cosine
+    normalize: true
+    card_verified: true
+
+  - id: embed-v4.0
+    provider: api
+    family: api
+    dim: 1536
+    max_seq_len: 128000
+    # input_type is mandatory from Cohere v3 onward and is the query/document selector.
+    query_task_type: search_query
+    doc_task_type: search_document
+    similarity: cosine
+    normalize: true
+    card_verified: true
+
+  # NOTE: §7 proposes e5-base-v2 as a third anchor, but it is absent from the RTEB board, so it
+  # could never pass a reproduction gate. all-mpnet-base-v2 (above) is on the board and is used
+  # in its place -- a verifiable anchor beats a nominally-preferred one.
+
+  # ---- Board expansion: more models = a real rank-correlation estimate -----
+  # Every entry below carries a published RTEB number, so each is a fresh reproduction test as
+  # well as another point on the leaderboard.
+  #
+  # Voyage family, and note the per-model split: RTEB records the "Represent the query for
+  # retrieving supporting documents: " prefix for voyage-4 / -4-lite / -3-large but NOT for
+  # voyage-law-2. Since Voyage's input_type *is* that prefix, law-2 must be sent with no
+  # input_type at all. Same vendor, same client, opposite prompting -- and it fails silently.
+  - id: voyage-4
+    provider: api
+    family: api
+    dim: 1024
+    max_seq_len: 32000
+    query_task_type: query
+    doc_task_type: document
+    card_verified: true
+  - id: voyage-4-lite
+    provider: api
+    family: api
+    dim: 1024
+    max_seq_len: 32000
+    query_task_type: query
+    doc_task_type: document
+    card_verified: true
+  - id: voyage-3-large
+    provider: api
+    family: api
+    dim: 2048
+    max_seq_len: 32000
+    query_task_type: query
+    doc_task_type: document
+    card_verified: true
+  - id: voyage-law-2
+    provider: api
+    family: api
+    dim: 1024
+    max_seq_len: 16000
+    card_verified: true          # deliberately no input_type; see note above
+
+  - id: text-embedding-3-small
+    provider: api
+    family: api
+    dim: 1536
+    max_seq_len: 8191
+    card_verified: true
+
+  - id: text-embedding-004
+    provider: vertex
+    family: api
+    dim: 768
+    max_seq_len: 2048
+    query_task_type: RETRIEVAL_QUERY
+    doc_task_type: RETRIEVAL_DOCUMENT
+    card_verified: true
+
+  - id: embed-multilingual-v3.0
+    provider: api
+    family: api
+    dim: 1024
+    max_seq_len: 512
+    query_task_type: search_query
+    doc_task_type: search_document
+    card_verified: true
+
+  # ---- Public top-10 gaps ---------------------------------------------------
+  # Quantized rows. RTEB lists these as leaderboard entries distinct from their float32
+  # siblings, served by the SAME endpoint -- hence api_model_name. dtype and dim are both part
+  # of the model's identity here, not storage choices.
+  - id: voyage-3.5-int8-512
+    api_model_name: voyage-3.5
+    provider: api
+    family: api
+    dim: 512
+    embd_dtype: int8
+    max_seq_len: 32000
+    query_task_type: query
+    doc_task_type: document
+    card_verified: true
+  # embed-v4.0 (int8, 512d) is DELIBERATELY EXCLUDED. It fails the gate at +0.038 on
+  # AILAStatutes, and the evidence points at RTEB's published row rather than our harness:
+  # three independent ways of producing a 512-dim embed-v4.0 -- Cohere's own output_dimension,
+  # naive slice+renormalize, and slice+quantize -- all land at 0.364-0.376, while RTEB publishes
+  # 0.33738, within 0.0003 of their OWN 1536-dim row (0.33711). Their "512d" row appears not to
+  # be 512-dimensional. Reported as a discrepancy (§10) rather than reproduced.
+  # Note voyage-3.5 (int8, 512d) passes both gates, so the int8 path itself is sound.
+
+  # Octen: #2 and #5 on the public board, Apache 2.0, LoRA finetunes of Qwen3-Embedding --
+  # the same architecture already running via Novita, so the local route carries over.
+  # Both carry a documented quirk: documents encoded with NO prefix misbehave. The repo's
+  # config_sentence_transformers.json sets document prompt to " " -- a single space -- and query
+  # prompt to the Qwen3-style Instruct wrapper. RTEB records no instruct for either model, which
+  # is the same contradiction seen with bge and Qwen3, so bare is the starting point and the gate
+  # decides. Pooling is last-token, confirmed against 1_Pooling/config.json.
+  - id: Octen/Octen-Embedding-4B
+    provider: local
+    family: llm-backbone
+    dim: 2560
+    revision: fea468fae3f0caffbae8a12ba792d1c394b6277d
+    pooling: last-token
+    max_seq_len: 32768
+    card_verified: true
+  - id: Octen/Octen-Embedding-8B
+    provider: local
+    family: llm-backbone
+    dim: 4096
+    revision: 5adcfa292e712091dfc30f0e97f0b2282e6cc66c
+    pooling: last-token
+    max_seq_len: 32768
+    card_verified: true
+
+  # ---- More contrast anchors, all local and revision-pinned ----------------
+  - id: BAAI/bge-small-en-v1.5
+    provider: local
+    family: bi-encoder-small
+    dim: 384
+    revision: 5c38ec7c405ec4b44b94cc5a9bb96e735b38267a
+    pooling: cls
+    max_seq_len: 512
+    card_verified: true
+  - id: BAAI/bge-large-en-v1.5
+    provider: local
+    family: bi-encoder
+    dim: 1024
+    revision: d4aa6901d3a41ba39fb536a557fa166f842b0e09
+    pooling: cls
+    max_seq_len: 512
+    card_verified: true
+  - id: BAAI/bge-m3
+    provider: local
+    family: bi-encoder
+    dim: 1024
+    revision: 5617a9f61b028005a4858fdac845db406aefb181
+    pooling: cls
+    max_seq_len: 8192
+    card_verified: true
+  - id: sentence-transformers/all-MiniLM-L12-v2
+    provider: local
+    family: bi-encoder-small
+    dim: 384
+    revision: a50ef00143b4d5391434df20ae11632588ac25be
+    pooling: mean
+    max_seq_len: 256
+    card_verified: true
+  - id: sentence-transformers/multi-qa-MiniLM-L6-cos-v1
+    provider: local
+    family: bi-encoder-small
+    dim: 384
+    revision: b207367332321f8e44f96e224ef15bc607f4dbf0
+    pooling: mean
+    max_seq_len: 512
+    card_verified: true
+
+retrieval_modes: [dense, bm25, hybrid]
+
+# Query-transformation generators; >=2 distinct lineages so a reshuffle can be separated from
+# generator self-preference bias (§1.2). Phase 2+.
+# Four lineages. §1.2 needs >=2 to separate a genuine reshuffle from generator self-preference
+# bias; four makes the direction-consistency check meaningful rather than a coin flip.
+#
+# Note the deliberate overlap with the EMBEDDING slate: gemini generates queries that
+# gemini-embedding-001 then embeds, and GPT queries meet text-embedding-3-large. That is the
+# self-preference confound the lineage control exists to detect, so the overlap is a feature --
+# but it means a same-lineage generator/embedder pair must never be read on its own.
+generators:
+  - id: gemini-2.5-pro
+    provider: vertex
+    lineage: google
+    # 2.5 Pro must think, and on Vertex those tokens count against max_output_tokens -- the
+    # default 2048 truncated 44 of 50 AILAStatutes rewrites into apparent summaries. Pin the
+    # budget to the documented minimum and leave ample room for the rewrite itself.
+    thinking_budget: 128
+    max_output_tokens: 8192
+  - id: claude-opus-4-8
+    provider: anthropic
+    lineage: anthropic
+    # Temperature was removed on Claude Opus 4.7+ and now returns a 400, so this generator
+    # samples at the model's own default rather than §7's pinned 0.7.
+    supports_temperature: false
+  - id: gpt-5.1-2025-11-13
+    provider: openai
+    lineage: openai
+    # Dated snapshot rather than the `gpt-5.1` alias: the alias moves, and §9 wants a pin.
+    revision: gpt-5.1-2025-11-13
+    supports_temperature: false
+  - id: meta-llama/llama-3.3-70b-instruct
+    # Moved off Novita (sustained 429 server_overload mid-study, 2026-07-23) to Vertex MaaS,
+    # which serves the same weights at much higher quota. Lineage id preserved so the
+    # cross-generator board is unchanged; api_model_name carries Vertex's own model string.
+    # Unpinnable moving endpoint (no revision), like voyage-4-large: run date is the provenance.
+    provider: vertex_maas
+    api_model_name: meta/llama-3.3-70b-instruct-maas
+    lineage: meta
+
+conditions: [paraphrase, verbose, terse, hyde]
+temperature: 0.7
+k: 10
+# Retrieve deeper than k so RRF fusion has a stable tail to work with (§5.4).
+retrieve_depth: 100
+seed: 20260720

@@ -1,0 +1,323 @@
+# Per-dataset adapter, tokenizer, and transform settings (§3, §6).
+#
+# `n_queries` / `n_docs` / `n_qrels` are the §5.1 correctness gate: the adapter test asserts the
+# loaded data matches these exactly. They record what is in the *pinned revision*, which is not
+# always what the dataset card's prose claims -- see the AILAStatutes note below.
+#
+# `hf_revision` is pinned per §9. Bumping it is a deliberate act that must be accompanied by
+# re-checking the counts and re-running the reproduction gate.
+
+datasets:
+  aila_statutes:
+    adapter: aila
+    hf_repo: embedding-benchmark/AILAStatutes
+    hf_revision: 1255c2b49d83e90708dc2b5c9c0e50ad25714716
+    # RTEB's own relevance.jsonl is a truncated export (50 rows = first gold per query); the
+    # leaderboard was scored against the full 217 pairs, which live here alongside a
+    # byte-identical corpus and query set. See the adapter docstring for the arithmetic proof.
+    qrels_hf_repo: mteb/AILA_statutes
+    qrels_hf_revision: 06b2a0adb872078b2fb4e9186212ab2f7251cd90
+    qrels_path: qrels/test.jsonl
+    n_queries: 50
+    n_docs: 82
+    n_qrels: 217
+    tokenizer:
+      tokenizer: word_v4
+      language: english
+      stemming: true
+      remove_stopwords: true
+      ascii_folding: true
+      # BM25 constants pinned explicitly (§9). These ARE turbopuffer's own defaults, read back
+      # off a live namespace rather than guessed -- but inheriting them silently is exactly what
+      # the rule forbids, since they scale every BM25 and hybrid score.
+      k1: 1.2
+      b: 0.75
+      max_token_length: 39
+    priority_transforms: [terse, paraphrase]
+    qrel_risk: medium
+    domain_hint: >-
+      This is a legal search query: a narrative describing the facts of an Indian court case,
+      used to retrieve the statutes that apply to it. Keep the legal substance exact -- the acts
+      committed, the parties and their roles, and any amounts, dates or statutory terms.
+    # RTEB leaderboard, results.json @ commit cfad4615, snapshot 2026-03-19.
+    # Scored with BEIR EvaluateRetrieval, cosine, top_k=100 (capped at corpus size).
+    published_ndcg_at_10:
+      gemini-embedding-001: 0.45695
+      voyage-4-large: 0.50163
+      qwen/qwen3-embedding-8b: 0.79863
+      text-embedding-3-large: 0.41044
+      embed-v4.0: 0.33711
+      BAAI/bge-base-en-v1.5: 0.21141
+      sentence-transformers/all-mpnet-base-v2: 0.21275
+      sentence-transformers/all-MiniLM-L6-v2: 0.20516
+      voyage-4: 0.50000
+      voyage-4-lite: 0.49023
+      voyage-3-large: 0.47873
+      voyage-law-2: 0.43991
+      text-embedding-3-small: 0.27489
+      text-embedding-004: 0.41004
+      embed-multilingual-v3.0: 0.29683
+      BAAI/bge-small-en-v1.5: 0.20799
+      BAAI/bge-large-en-v1.5: 0.20784
+      BAAI/bge-m3: 0.30468
+      sentence-transformers/all-MiniLM-L12-v2: 0.20714
+      sentence-transformers/multi-qa-MiniLM-L6-cos-v1: 0.21796
+      voyage-3.5-int8-512: 0.46654
+      # embed-v4.0-int8-512 (0.33738) excluded -- see experiment.yaml. Their 512d row scores
+      # within 0.0003 of their own 1536d row, and does not appear to be 512-dimensional.
+      Octen/Octen-Embedding-8B: 0.92125
+      Octen/Octen-Embedding-4B: 0.84870
+    notes: >-
+      The card's prose describes 197 statutes, but the RTEB-packaged corpus.jsonl holds 82 docs.
+      RTEB scored the leaderboard against this packaging, so 82 is the retrieval pool to reproduce
+      against -- do not substitute the fuller original AILA corpus. All titles are empty; the
+      statute name is folded into `text` as a "Title: ...\nDesc: ..." preamble, and RTEB's loader
+      reads `text` only. Queries are long case-scenario narratives (median ~3.1k chars), which
+      makes `terse` the highest-signal transform: compressing a narrative to its legal issue is
+      the realistic LLM rewrite. Note the longest documents exceed gemini-embedding-001's
+      2048-token limit and get truncated -- that truncation is part of the published number.
+
+  chatdoctor:
+    adapter: chatdoctor
+    hf_repo: embedding-benchmark/ChatDoctor_HealthCareMagic
+    hf_revision: 50c2986fedffa33b38afd5c1752026f8e9e5ed1d
+    # NOT the 112k the plan's §6 table quotes -- RTEB packaged a 5,545-doc subset of
+    # HealthCareMagic. That figure is why this dataset was scheduled last as the expensive one;
+    # it is in fact cheap. Exactly one relevant document per query.
+    n_queries: 5591
+    n_docs: 5545
+    n_qrels: 5591
+    tokenizer:
+      tokenizer: word_v4
+      language: english
+      stemming: true
+      remove_stopwords: true
+      ascii_folding: true
+      k1: 1.2
+      b: 0.75
+      max_token_length: 39
+    priority_transforms: [paraphrase, terse]
+    qrel_risk: high
+    domain_hint: >-
+      This is a patient describing a health problem in their own words, used to retrieve a
+      doctor's answer. Keep every clinical detail exact -- symptoms, their location and duration,
+      age and sex, medications, procedures already undergone, and test results. Keep the everyday
+      register; do not convert it into clinical terminology the patient did not use.
+    published_ndcg_at_10:
+      voyage-4-large: 0.76741
+      voyage-4: 0.74077
+      voyage-3-large: 0.74300
+      gemini-embedding-001: 0.74007
+      text-embedding-004: 0.72889
+      embed-v4.0: 0.72783
+      Octen/Octen-Embedding-8B: 0.72622
+      qwen/qwen3-embedding-8b: 0.72134
+      Octen/Octen-Embedding-4B: 0.70662
+      voyage-4-lite: 0.70335
+      text-embedding-3-large: 0.66653
+      embed-multilingual-v3.0: 0.58877
+      BAAI/bge-m3: 0.57990
+      BAAI/bge-large-en-v1.5: 0.57640
+      text-embedding-3-small: 0.57852
+      sentence-transformers/all-mpnet-base-v2: 0.57152
+      BAAI/bge-base-en-v1.5: 0.53572
+      sentence-transformers/all-MiniLM-L12-v2: 0.53294
+      sentence-transformers/all-MiniLM-L6-v2: 0.52946
+      BAAI/bge-small-en-v1.5: 0.51574
+      sentence-transformers/multi-qa-MiniLM-L6-cos-v1: 0.46143
+    notes: >-
+      Real de-identified patient narrative -- §7 applies: no raw commits, region-appropriate
+      storage. Uses mteb's `_id` field rather than the `id` used by the other two datasets.
+      Published recall@100 is 0.9619 rather than 1.0, so unlike AILAStatutes this is a genuine
+      retrieval task over a corpus larger than top_k, not a re-ranking one; precision@100 =
+      recall@100/100 confirms the 1:1 qrels are not truncated. Highest unlabeled-relevant risk on
+      the slate (§5.6): documents are doctors' answers and many patients ask near-identical
+      questions, so several answers may genuinely serve a query while only one is labelled.
+      Score band is tight (0.46-0.77 across our models) versus AILAStatutes' 0.21-0.92, which
+      makes tau considerably more sensitive here.
+
+  humaneval:
+    adapter: humaneval
+    hf_repo: embedding-benchmark/HumanEval
+    hf_revision: ed1f48aca747f10bac146795328e2f03326e7625
+    n_queries: 158
+    n_docs: 158
+    n_qrels: 158
+    # Code tokenizer (§5.3). Stemming mangles identifiers, stopword removal eats language
+    # keywords (`in`, `not`, `for`), and case folding collapses distinctions code relies on.
+    # `language` is deliberately unset: there is no natural language here to stem.
+    tokenizer:
+      tokenizer: word_v4
+      # turbopuffer applies `english` even to a code corpus when this is omitted -- confirmed by
+      # reading the stored schema back. Inert while stemming and stopword removal are both off,
+      # but pinned rather than inherited.
+      language: english
+      case_sensitive: true
+      stemming: false
+      remove_stopwords: false
+      ascii_folding: false
+      k1: 1.2
+      b: 0.75
+      max_token_length: 39
+    # No HyDE: the docstring IS the specification, so hallucinating an answer passage rewrites
+    # the task rather than the query (§6). Paraphrase must be spec-preserving.
+    priority_transforms: [paraphrase]
+    qrel_risk: high
+    domain_hint: >-
+      This is a programming task description, used to retrieve the Python function that
+      implements it. The description IS the specification, so preserve it exactly: the function's
+      inputs, outputs, edge cases and any stated behaviour. Do not add or drop a requirement, and
+      do not write code.
+    published_ndcg_at_10:
+      gemini-embedding-001: 0.989
+      voyage-4-large: 0.99367
+      qwen/qwen3-embedding-8b: 0.99216
+      text-embedding-3-large: 0.929
+      embed-v4.0: 0.97516
+      BAAI/bge-base-en-v1.5: 0.64375
+      sentence-transformers/all-mpnet-base-v2: 0.75814
+      sentence-transformers/all-MiniLM-L6-v2: 0.65329
+      voyage-4: 0.98983
+      voyage-4-lite: 0.98832
+      voyage-3-large: 0.99133
+      text-embedding-3-small: 0.81719
+      text-embedding-004: 0.87389
+      embed-multilingual-v3.0: 0.80925
+      BAAI/bge-small-en-v1.5: 0.62793
+      BAAI/bge-large-en-v1.5: 0.67787
+      BAAI/bge-m3: 0.61398
+      sentence-transformers/all-MiniLM-L12-v2: 0.70135
+      sentence-transformers/multi-qa-MiniLM-L6-cos-v1: 0.57785
+      voyage-3.5-int8-512: 0.99216
+      # embed-v4.0-int8-512 (0.97333) excluded -- see experiment.yaml.
+      Octen/Octen-Embedding-8B: 0.99766
+      Octen/Octen-Embedding-4B: 0.99359
+      # voyage-law-2 has no HumanEval row on the board (legal-domain model).
+    notes: >-
+      158 problems, not upstream HumanEval's 164. Relevance is genuinely 1:1 -- verified against
+      RTEB's published precision@100 = 0.01 and recall@100 = 1.0, which is exactly what one
+      relevant doc per query implies -- rather than truncated like AILAStatutes. Corpus rows
+      carry no `title` field at all. Scores here sit near ceiling (~0.99) for every top model, so
+      this dataset has almost no headroom to show improvement; it can realistically only show
+      degradation, which matters when interpreting any ΔNDCG measured on it.
+
+  # --- Extension datasets (docs/plan-trec-covid-curev1.md). Adapters + config landed; the paid
+  # --- index build / gate is a pause-before-paid checkpoint (non-negotiable #5) and has NOT run.
+
+  curev1_en:
+    adapter: curev1
+    hf_repo: embedding-benchmark/CUREv1_en
+    hf_revision: 25de3db08fb59c634bec3b0f9c6b84ca8ea44658
+    # The metric-blindness counterweight to ChatDoctor: same medical domain, but 244,600 passages
+    # with avg 40.4 relevant/query (min 1, max 1,364) instead of 5,545 docs / 1 gold, so NDCG@10
+    # sees the whole top-10 rather than only where the single gold landed.
+    n_queries: 2000
+    n_docs: 244600
+    # relevance.jsonl is `{qid: {docid: score}}`, NOT BEIR triples (see curev1.py); 80,716 pairs.
+    # RTEB packages it BINARY (every score 1) despite the card's Rel/Partial/Not grading -- the
+    # non-relevant pairs are simply absent. Scored against this packaging, per the gate.
+    n_qrels: 80716
+    tokenizer:
+      tokenizer: word_v4
+      language: english
+      stemming: true
+      remove_stopwords: true
+      ascii_folding: true
+      k1: 1.2
+      b: 0.75
+      max_token_length: 39
+    priority_transforms: [paraphrase, terse, verbose]
+    qrel_risk: medium
+    domain_hint: >-
+      This is an expert clinical question, used to retrieve relevant biomedical passages. Keep
+      every clinical detail exact -- the condition, the population (age, sex, comorbidities), any
+      intervention, comparator or outcome, and any dosages, measurements or timeframes. Keep the
+      clinical register; do not simplify a specialist question into lay terms.
+    # RTEB leaderboard, results/results.json (github.com/embedding-benchmark/rteb). Per-dataset
+    # CUREv1_en NDCG@10 -- NOT the RTEB `healthcare` domain aggregate, which averages
+    # CUREv1_en + CUREv1_fr + ChatDoctor and is the cross-dataset artifact CLAUDE.md forbids as an
+    # anchor. 19 of 24 slate models are covered; text-embedding-3-large/-small, voyage-law-2,
+    # voyage-3.5-int8-512 and nemotron-3-embed-8b have no CUREv1_en row and cannot be gated on it.
+    published_ndcg_at_10:
+      gemini-embedding-001: 0.63599
+      voyage-4-large: 0.73055
+      qwen/qwen3-embedding-8b: 0.52680
+      BAAI/bge-base-en-v1.5: 0.52706
+      sentence-transformers/all-mpnet-base-v2: 0.40196
+      sentence-transformers/all-MiniLM-L6-v2: 0.36680
+      embed-v4.0: 0.58824
+      voyage-4: 0.68686
+      voyage-4-lite: 0.61278
+      voyage-3-large: 0.69945
+      text-embedding-004: 0.55649
+      embed-multilingual-v3.0: 0.58776
+      Octen/Octen-Embedding-4B: 0.64478
+      Octen/Octen-Embedding-8B: 0.64109
+      BAAI/bge-small-en-v1.5: 0.47744
+      BAAI/bge-large-en-v1.5: 0.53983
+      BAAI/bge-m3: 0.50463
+      sentence-transformers/all-MiniLM-L12-v2: 0.38620
+      sentence-transformers/multi-qa-MiniLM-L6-cos-v1: 0.37531
+    notes: >-
+      On RTEB, so it gates against the per-dataset published number exactly like the other three.
+      Corpus rows are `{id, text}` with no title; dense embeds the passage text alone. The dense
+      qrels (~40 relevant/query) are the whole point -- the ChatDoctor<->CUREv1 pair (same domain,
+      1 gold/5.5k docs vs ~40 golds/245k docs) tests whether verbose's "harmless broadening" is
+      real robustness or one-gold metric blindness. First genuinely large corpus on the slate
+      (~32M tokens): paid index build is a pause-before-paid checkpoint.
+
+  trec_covid:
+    adapter: trec_covid
+    # BeIR corpus (CORD-19 2020-07-16, title+abstract) + Round-5 complete qrels, both pinned by
+    # HF revision. The three human fields come from a committed, sha256-pinned topics-rnd5.xml
+    # (see trec_covid.py) -- NOT from HF, since NIST's topics file is unversioned.
+    hf_repo: BeIR/trec-covid
+    hf_revision: 7e16fde3016c639c7f856e803f4bab92645562c4
+    qrels_hf_repo: BeIR/trec-covid-qrels
+    qrels_hf_revision: 532ac68ee6756ac22c9346eebf65bd3c6a042e10
+    qrels_path: test.tsv
+    n_queries: 50
+    n_docs: 171332
+    # BeIR test.tsv: 66,336 graded judgments (0/1/2; two -1 clamped to 0), all resolving to corpus,
+    # all 50 topics judged. ~494 relevant (score>=1) per query.
+    n_qrels: 66336
+    tokenizer:
+      tokenizer: word_v4
+      language: english
+      stemming: true
+      remove_stopwords: true
+      ascii_folding: true
+      k1: 1.2
+      b: 0.75
+      max_token_length: 39
+    priority_transforms: [terse, verbose, paraphrase]
+    qrel_risk: low
+    domain_hint: >-
+      This is a search query about COVID-19 / SARS-CoV-2, used to retrieve relevant
+      scientific-literature abstracts. Keep the scientific substance exact -- the specific virus,
+      disease or condition, the population, and any intervention, mechanism, risk factor or outcome
+      asked about. Do not narrow or broaden the scientific scope of the question.
+    # NOT on RTEB -- documented §4 deviation. These are MTEB TRECCOVID (test split) NDCG@10 for the
+    # revision-pinned local models only (embeddings-benchmark/results). PROVENANCE MISMATCH: MTEB
+    # applies bge's query prefix and encodes title+text, while our harness runs open-weight models
+    # BARE -- so expect a systematic offset on the bge models (their prefix raises NDCG ~0.02), and
+    # a clean gate on mpnet/MiniLM (no prefix). A consistent offset does not invalidate the
+    # within-harness tau contrast across the three human fields; an erratic one does. See plan §4.
+    published_ndcg_at_10:
+      BAAI/bge-base-en-v1.5: 0.78029
+      BAAI/bge-large-en-v1.5: 0.74696
+      BAAI/bge-small-en-v1.5: 0.75525
+      BAAI/bge-m3: 0.54722
+      sentence-transformers/all-mpnet-base-v2: 0.51326
+      sentence-transformers/all-MiniLM-L6-v2: 0.47232
+      sentence-transformers/all-MiniLM-L12-v2: 0.50816
+      sentence-transformers/multi-qa-MiniLM-L6-cos-v1: 0.55796
+    notes: >-
+      The drift-free keyword axis + methodology-validation dataset (plan §1). Each topic ships
+      three human phrasings of one need against the same qrels: `query` (keyword, ~terse),
+      `question` (baseline, the field BEIR/MTEB scores -- this is what queries() returns and the
+      gate anchor), `narrative` (~verbose). Zero intent drift by construction, so the §5.6 audit is
+      unnecessary for the human arms (still run it on the LLM arms). First dataset with real titles:
+      the title is folded into `text` (BEIR encodes title+" "+text; our dense build embeds text
+      alone), so `title` is emptied in the adapter. n=50, so every tau needs a 95% bootstrap CI
+      (plan §5.5). Paid index build over 171,332 docs is a pause-before-paid checkpoint.
