@@ -1,6 +1,7 @@
 # query_form_experiment
 
-The code and the evidence behind *Your Queries Can Reorder the Leaderboard*.
+The code and the evidence behind
+[*Your Queries Can Reorder the Retrieval Leaderboard*](https://georgianailab.substack.com/p/your-queries-can-reorder-the-retrieval).
 
 I explored what happens to a retrieval leaderboard when you change only the *form* of the
 queries, holding the corpus and the relevance labels fixed. This repository is the harness that
